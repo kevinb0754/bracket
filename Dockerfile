@@ -1,15 +1,12 @@
 # Build static frontend files
 FROM node:25-alpine AS builder
-
-WORKDIR /app
-
 ENV NODE_ENV=production
-
-COPY frontend .
-
 ARG VITE_API_BASE_URL
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 
+WORKDIR /app
+RUN echo "Just before frontend copy"
+COPY frontend .
 RUN apk add pnpm && \
     CI=true pnpm install && \
     VITE_API_BASE_URL=${VITE_API_BASE_URL} pnpm build
