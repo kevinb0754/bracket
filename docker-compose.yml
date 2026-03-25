@@ -19,8 +19,6 @@ services:
       - SERVE_FRONTEND: true
       - API_PREFIX: '/api'
     image: ghcr.io/evroon/bracket
-    ports:
-      - 8400:8400
     restart: unless-stopped
     volumes:
       - bracket_static_data:/app/static
