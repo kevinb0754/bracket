@@ -1,46 +1,38 @@
 # Build static frontend files
 FROM node:25-alpine AS builder
-
 WORKDIR /app
-
-# --- ADDED THESE LINES ---
-# This allows the variable from your docker-compose 'args' to enter the build
 ARG VITE_API_BASE_URL
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
-# -------------------------
-
 ENV NODE_ENV=production
-
-COPY frontend .
-
+COPY frontend ./frontend
 RUN apk add pnpm && \
+    cd frontend && \
     CI=true pnpm install && \
     pnpm build
-
-# ... (Keep the entire builder stage the same) ...
 
 # Build backend image
 FROM python:3.14-alpine3.22
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-RUN rm -rf /var/cache/apk/*
+RUN apk add --no-cache wget && rm -rf /var/cache/apk/*
 
 WORKDIR /app
-COPY backend /app
 
-# -- Install dependencies as ROOT first --
+# 1. Copy the backend folder contents directly into /app
+COPY backend/ ./ 
+
+# 2. Now pyproject.toml is exactly where uv expects it
 RUN uv sync --no-dev --locked
 
-# -- NOW setup the user and permissions --
+# 3. Setup user and permissions
 RUN addgroup --system bracket && \
     adduser --system bracket --ingroup bracket && \
     chown -R bracket:bracket /app
 
-# Move the 'USER' command to the bottom
+# 4. Copy built frontend from the builder stage
+COPY --from=builder --chown=bracket:bracket /app/frontend/dist /app/frontend-dist
+
 USER bracket
-
-COPY --from=builder --chown=bracket:bracket /app/dist /app/frontend-dist
-
 EXPOSE 8400
 
 HEALTHCHECK --interval=3s --timeout=5s --retries=10 \
