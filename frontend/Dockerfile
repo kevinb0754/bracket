@@ -4,13 +4,10 @@ FROM node:25-alpine AS builder
 WORKDIR /app
 
 ENV NODE_ENV=production
-ARG VITE_API_BASE_URL
-ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 
 COPY . .
 
-RUN cp . /app && \
-    apk add pnpm && \
+RUN apk add pnpm && \
     CI=true pnpm install && \
     pnpm build
 
