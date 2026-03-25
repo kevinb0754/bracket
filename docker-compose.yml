@@ -1,42 +1,37 @@
-volumes:
-  bracket-postgres-data:
-  bracket_static_data:
-
 services:
-  bracket:
-    container_name: bracket
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      - ENVIRONMENT=PRODUCTION
-      - PG_DSN=postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
-      - CORS_ORIGINS=${CORS_ORIGINS}
-      - JWT_SECRET=${JWT_SECRET}
-      - ADMIN_EMAIL=${ADMIN_EMAIL}
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
-      - AUTO_RUN_MIGRATIONS=true
-      - SERVE_FRONTEND: true
-      - API_PREFIX: '/api'
-    image: ghcr.io/evroon/bracket
-    ports:
-      - 8400:8400
-    restart: unless-stopped
-    volumes:
-      - bracket_static_data:/app/static
-
-  postgres:
-    image: 'postgres:16-alpine'
-    container_name: bracket-postgres
-    restart: unless-stopped
-    environment:
-      - POSTGRES_DB=${DB_NAME}
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-    volumes:
-      - bracket-postgres-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+    bracket-frontend:
+        image: ghcr.io/evroon/bracket-frontend
+        container_name: bracket-frontend
+        ports:
+            - "3000:3000"
+        environment:
+            NODE_ENV: "production"
+            VITE_API_BASE_URL: "http://your-site.com:8400"
+            VITE_HCAPTCHA_SITE_KEY: "10000000-ffff-ffff-ffff-000000000001"
+        restart: unless-stopped
+ 
+    bracket-backend:
+        image: ghcr.io/evroon/bracket-backend
+        container_name: bracket-backend
+        ports:
+            - "8400:8400"
+        environment:
+            ENVIRONMENT: "PRODUCTION"
+            PG_DSN: "postgresql://bracket_prod:bracket_prod@postgres:5432/bracket_prod"
+            CORS_ORIGINS: https://your-site.com
+            JWT_SECRET: change_me
+        volumes:
+            - ./backend/static:/app/static
+        restart: unless-stopped
+        depends_on:
+          - postgres
+ 
+    postgres:
+        image: postgres
+        restart: always
+        environment:
+          POSTGRES_DB: bracket_prod
+          POSTGRES_USER: bracket_prod
+          POSTGRES_PASSWORD: bracket_prod
+        volumes:
+          - ./postgres:/var/lib/postgresql
