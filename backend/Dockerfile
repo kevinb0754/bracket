@@ -4,7 +4,7 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 ARG VITE_API_BASE_URL
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 
-RUN cd backend && \
+RUN copy . /app && \
     rm -rf /var/cache/apk/*
 
 COPY . /app
