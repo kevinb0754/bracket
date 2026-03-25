@@ -9,7 +9,7 @@ ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 
 COPY . .
 
-RUN echo "Front end" && \
+RUN cp . /app && \
     apk add pnpm && \
     CI=true pnpm install && \
     pnpm build
