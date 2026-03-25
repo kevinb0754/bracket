@@ -18,21 +18,22 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 RUN apk add --no-cache wget && rm -rf /var/cache/apk/*
 
-# Set the workdir to /app/backend so uv finds the pyproject.toml
-WORKDIR /app/backend
+# WORKDIR is /app
+WORKDIR /app
 
-# Copy the backend folder from your repo into the current workdir
+# 1. Copy the CONTENTS of the backend folder into /app
+# This ensures pyproject.toml is at /app/pyproject.toml
 COPY backend/ .
 
-# Now uv sync will work because it's sitting next to pyproject.toml
+# 2. This will now find the pyproject.toml in the current directory
 RUN uv sync --no-dev --locked
 
-# Setup user and permissions for the whole /app folder
+# 3. Setup user and permissions
 RUN addgroup --system bracket && \
     adduser --system bracket --ingroup bracket && \
     chown -R bracket:bracket /app
 
-# Copy built frontend from the builder stage
+# 4. Copy built frontend from the builder stage
 COPY --from=builder --chown=bracket:bracket /app/frontend/dist /app/frontend-dist
 
 USER bracket
@@ -41,6 +42,7 @@ EXPOSE 8400
 HEALTHCHECK --interval=3s --timeout=5s --retries=10 \
     CMD ["wget", "-O", "/dev/null", "http://0.0.0.0:8400/ping"]
 
+# Explicitly tell gunicorn where the app is since we flattened the folder
 CMD [ \
     "uv", \
     "run", \
