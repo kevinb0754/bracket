@@ -1,39 +1,47 @@
-networks:
-  bracket_lan:
-    driver: bridge
-
-volumes:
-  bracket_pg_data:
-  bracket_static_data:
-
+version: '3.8'
 services:
-  bracket:
-    container_name: bracket
-    depends_on:
-      - postgres
-    environment:
-      ENVIRONMENT: DEVELOPMENT
-      CORS_ORIGINS: http://localhost:8400
-      PG_DSN: postgresql://bracket_dev:bracket_dev@postgres:5432/bracket_dev
-      SERVE_FRONTEND: true
-      API_PREFIX: '/api'
-    image: ghcr.io/evroon/bracket
-    networks:
-      - bracket_lan
-    ports:
-      - 8400:8400
+  bracket-frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL}
+    container_name: bracket-frontend
     restart: unless-stopped
-    volumes:
-      - bracket_static_data:/app/static
+
+  bracket-backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: bracket-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - ENVIRONMENT=PRODUCTION
+      - PG_DSN=postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+      - CORS_ORIGINS=${CORS_ORIGINS}
+      - JWT_SECRET=${JWT_SECRET}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - AUTO_RUN_MIGRATIONS=true
 
   postgres:
+    image: 'postgres:16-alpine'
+    container_name: bracket-postgres
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: bracket_dev
-      POSTGRES_PASSWORD: bracket_dev
-      POSTGRES_USER: bracket_dev
-    image: postgres
-    networks:
-      - bracket_lan
-    restart: always
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
     volumes:
-      - bracket_pg_data:/var/lib/postgresql/data
+      - bracket-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  bracket-postgres-data:
