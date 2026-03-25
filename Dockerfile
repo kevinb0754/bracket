@@ -5,7 +5,7 @@ ARG VITE_API_BASE_URL
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 
 WORKDIR /app
-RUN echo "Just before frontend copy"
+
 COPY frontend .
 RUN apk add pnpm && \
     CI=true pnpm install && \
@@ -15,7 +15,8 @@ RUN apk add pnpm && \
 FROM python:3.14-alpine3.22
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-RUN rm -rf /var/cache/apk/*
+RUN rm -rf /var/cache/apk/* && \
+    echo "Here we are"
 
 COPY backend /app
 WORKDIR /app
