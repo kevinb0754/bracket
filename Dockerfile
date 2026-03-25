@@ -17,22 +17,27 @@ RUN apk add pnpm && \
     CI=true pnpm install && \
     pnpm build
 
-# Build backend image that also serves frontend (stored in `/app/frontend-dist`)
+# ... (Keep the entire builder stage the same) ...
+
+# Build backend image
 FROM python:3.14-alpine3.22
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 RUN rm -rf /var/cache/apk/*
 
-COPY backend /app
 WORKDIR /app
+COPY backend /app
 
-# -- Install dependencies:
+# -- Install dependencies as ROOT first --
+RUN uv sync --no-dev --locked
+
+# -- NOW setup the user and permissions --
 RUN addgroup --system bracket && \
     adduser --system bracket --ingroup bracket && \
     chown -R bracket:bracket /app
-USER bracket
 
-RUN uv sync --no-dev --locked
+# Move the 'USER' command to the bottom
+USER bracket
 
 COPY --from=builder --chown=bracket:bracket /app/dist /app/frontend-dist
 
