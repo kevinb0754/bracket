@@ -1,20 +1,10 @@
-version: '3.8'
-services:
-  bracket-frontend:
-    build:
-      context: .
-      dockerfile: frontend/Dockerfile
-      args:
-        - VITE_API_BASE_URL=${VITE_API_BASE_URL}
-    container_name: bracket-frontend
-    restart: unless-stopped
+volumes:
+  bracket-postgres-data:
+  bracket_static_data:
 
-  bracket-backend:
-    build:
-      context: .
-      dockerfile: backend/Dockerfile
-    container_name: bracket-backend
-    restart: unless-stopped
+services:
+  bracket:
+    container_name: bracket
     depends_on:
       postgres:
         condition: service_healthy
@@ -26,6 +16,14 @@ services:
       - ADMIN_EMAIL=${ADMIN_EMAIL}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
       - AUTO_RUN_MIGRATIONS=true
+      - SERVE_FRONTEND: true
+      - API_PREFIX: '/api'
+    image: ghcr.io/evroon/bracket
+    ports:
+      - 8400:8400
+    restart: unless-stopped
+    volumes:
+      - bracket_static_data:/app/static
 
   postgres:
     image: 'postgres:16-alpine'
@@ -42,6 +40,4 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-
-volumes:
-  bracket-postgres-data:
+	  
