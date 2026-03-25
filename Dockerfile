@@ -3,13 +3,19 @@ FROM node:25-alpine AS builder
 
 WORKDIR /app
 
+# --- ADDED THESE LINES ---
+# This allows the variable from your docker-compose 'args' to enter the build
+ARG VITE_API_BASE_URL
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+# -------------------------
+
 ENV NODE_ENV=production
 
 COPY frontend .
 
 RUN apk add pnpm && \
     CI=true pnpm install && \
-    VITE_API_BASE_URL=${VITE_API_BASE_URL} pnpm build
+    pnpm build
 
 # Build backend image that also serves frontend (stored in `/app/frontend-dist`)
 FROM python:3.14-alpine3.22
