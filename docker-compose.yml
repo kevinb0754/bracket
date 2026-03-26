@@ -1,37 +1,41 @@
 services:
-    bracket-frontend:
-        image: ghcr.io/evroon/bracket-frontend
-        container_name: bracket-frontend
-        ports:
-            - "3000:3000"
-        environment:
-            NODE_ENV: "production"
-            VITE_API_BASE_URL: ${VITE_API_BASE_URL}
-            VITE_HCAPTCHA_SITE_KEY: "10000000-ffff-ffff-ffff-000000000001"
-        restart: unless-stopped
- 
-    bracket-backend:
-        image: ghcr.io/evroon/bracket-backend
-        container_name: bracket-backend
-        ports:
-            - "8400:8400"
-        environment:
-            ENVIRONMENT: "PRODUCTION"
-            PG_DSN: "postgresql://bracket_prod:bracket_prod@postgres:5432/bracket_prod"
-            CORS_ORIGINS: ${CORS_ORIGINS}
-            JWT_SECRET: ${JWT_SECRET}
-        volumes:
-            - ./backend/static:/app/static
-        restart: unless-stopped
-        depends_on:
-          - postgres
- 
-    postgres:
-        image: postgres
-        restart: always
-        environment:
-          POSTGRES_DB: bracket_prod
-          POSTGRES_USER: bracket_prod
-          POSTGRES_PASSWORD: bracket_prod
-        volumes:
-          - ./postgres:/var/lib/postgresql
+  bracket-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL}
+    environment:
+      NODE_ENV: production
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+      VITE_HCAPTCHA_SITE_KEY: ''
+    restart: unless-stopped
+  bracket-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      ENVIRONMENT: PRODUCTION
+      PG_DSN: 'postgresql://${DB_USER}:${DB_PASS}@postgres:5432/${DB_NAME}'
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      JWT_SECRET: ${JWT_SECRET}
+    volumes:
+      - './backend/static:/app/static'
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+  postgres:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+    volumes:
+      - './postgres:/var/lib/postgresql'
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
