@@ -53,6 +53,8 @@ Tournament system meant to be easy to use. Bracket is written in async Python (w
 [FastAPI](https://fastapi.tiangolo.com)) and [Vite](https://vite.dev/) as frontend using the
 [Mantine](https://mantine.dev/) library.
 
+**Updated to fix Internal server error https://github.com/evroon/bracket/issues/1452 and it works on Coolify**
+
 It has the following features:
 - Supports **single elimination, round-robin and swiss** formats.
 - **Build your tournament structure** with multiple stages that can have multiple groups/brackets in
