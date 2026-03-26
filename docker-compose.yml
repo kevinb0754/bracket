@@ -11,14 +11,15 @@ services:
       VITE_HCAPTCHA_SITE_KEY: ''
     restart: unless-stopped
   bracket-backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: ghcr.io/evroon/bracket-backend
+    container_name: bracket-backend
     environment:
       ENVIRONMENT: PRODUCTION
       PG_DSN: 'postgresql://${DB_USER}:${DB_PASS}@postgres:5432/${DB_NAME}'
       CORS_ORIGINS: ${CORS_ORIGINS}
       JWT_SECRET: ${JWT_SECRET}
+	  ADMIN_EMAIL: ${ADMIN_EMAIL}
+	  ADMIN_PASSWORD: ${ADMIN_PASSWORD}
     volumes:
       - './backend/static:/app/static'
     restart: unless-stopped
